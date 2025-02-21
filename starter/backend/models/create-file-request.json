@@ -1,17 +1,14 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "task",
+    "title": "file",
     "type": "object",
     "properties": {
-      "name": {
-        "type": "string"
-      },
-      "dueDate": {
+      "title": {
         "type": "string"
       }
     },
     "required": [
-      "name", "dueDate"
+      "filename"
     ],
     "additionalProperties": false
 }

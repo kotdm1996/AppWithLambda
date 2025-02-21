@@ -12,30 +12,48 @@ provider:
     lambda: true
     apiGateway: true
 
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
 
-environment:
-    TODO_TABLE: Todo-${self:provider.stage}
-    //IMAGES_TABLE: Images-${self:provider.stage}
-    //IMAGE_ID_INDEX: ImageIdIndex
-    //IMAGES_S3_BUCKET: dktest202402-todo-images-${self:provider.stage}
-    SIGNED_URL_EXPIRATION: 300
+  environment:
+      TODO_TABLE: Todo-${self:provider.stage}
+      FILES_TABLE: Files-${self:provider.stage}
+      FILES_ID_INDEX: FilesIdIndex
+      FILES_S3_BUCKET: dktest202402-todo-files-${self:provider.stage}
+      SIGNED_URL_EXPIRATION: 300
 
-iam:
-  role:
-    statements:
-      - Effect: Allow
-        Action:
-          - dynamodb:Scan
-          - dynamodb:PutItem
-          - dynamodb:GetItem
-          - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
-    - Effects: Allow
-      Action:
-          - xray:PutTraceSegments
-          - xray:PutTelemetryRecords
-      Resource:
-          - *
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Scan
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:Query
+            - dynamodb:DeleteItem
+            - dynamodb:UpdateItem
+          Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+        - Effect: Allow        
+          Action:
+              - dynamodb:Query
+              - dynamodb:PutItem
+          Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FILES_TABLE}
+        - Effect: Allow
+          Action:
+              - dynamodb:Query
+          Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FILES_TABLE}/index/${self:provider.environment.FILES_ID_INDEX}
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+          Resource: arn:aws:s3:::${self:provider.environment.FILES_S3_BUCKET}/*
+        - Effect: Allow
+          Action:
+            - "xray:PutTraceSegments"
+            - "xray:PutTelemetryRecords"
+          Resource:
+            - "*"
 
 functions:
   Auth:
@@ -48,6 +66,8 @@ functions:
       - http:
           method: get
           path: todos
+          authorizer: Auth          
+          cors: true
 
   # TODO: Configure this function - dktest - not tested
   CreateTodo:
@@ -62,21 +82,28 @@ functions:
             schemas:
               application/json: ${file(models/create-task-request.json)}
 
-  # TODO: Configure this function
+  # TODO: Configure this function - dktest - need test
   UpdateTodo:
     handler: src/lambda/http/updateTodo.handler
     events:
       - http:
           method: patch
           path: todos/{todoId}
+          authorizer: Auth
+          cors: true
+          request:
+            schemas:
+              application/json: ${file(models/create-task-request.json)}
 
-  # TODO: Configure this function
+  # TODO: Configure this function  - need test
   DeleteTodo:
     handler: src/lambda/http/deleteTodo.handler
     events:
       - http:
           method: delete
           path: todos/{todoId}
+          authorizer: Auth
+          cors: true
 
   # TODO: Configure this function
   GenerateUploadUrl:
@@ -84,8 +111,99 @@ functions:
     events:
       - http:
           method: post
+          authorizer: Auth
           path: todos/{todoId}/attachment
+          cors: true
+          request:
+            schemas:
+              application/json: ${file(models/create-file-request.json)}
+
 
 resources:
   Resources:
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+
     # TODO: Add any necessary AWS resources
+    TodoDynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: todoId
+            AttributeType: S          
+        KeySchema:
+          - AttributeName: todoId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.TODO_TABLE}
+    
+    FilesDynamoDBTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: todoId
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: S
+          - AttributeName: fileId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: todoId
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        TableName: ${self:provider.environment.FILES_TABLE}
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.FILES_ID_INDEX}
+            KeySchema:
+            - AttributeName: fileId
+              KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    AttachmentsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.FILES_S3_BUCKET}
+        PublicAccessBlockConfiguration:
+          BlockPublicPolicy: false
+          RestrictPublicBuckets: false
+        CorsConfiguration:
+          CorsRules:
+            -
+              AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+    BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        PolicyDocument:
+          Id: MyPolicy
+          Version: "2012-10-17"
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: 's3:GetObject'
+              Resource: 'arn:aws:s3:::${self:provider.environment.FILES_S3_BUCKET}/*'
+        Bucket: !Ref AttachmentsBucket
