@@ -37,7 +37,7 @@ export async function handler(event) {
   })
 
   console.info('DKTEST AFTER SAVING BEFORE RETURNING')
-  const returnItem = {
+  const returnItem = { item: {
     name: newTodo.name,
     dueDate: newTodo.dueDate,
     todoId: itemId,
@@ -45,16 +45,20 @@ export async function handler(event) {
     done: false,
     createdAt: createdAt,
     attachmentUrl: ""
-  }
-
-  //console.debug('Printing returning item ===> ' + returnItem)
-  //return  {
-  //  statusCode: 201,
-  //  headers: {'Access-Control-Allow-Origin': '*'},
-  //  body: JSON.stringify(returnItem)
-  //}
+  }}
+    
   
 
+  //JSON.stringify(returnItem)
+  console.debug('Printing returning item ===> ' + JSON.stringify(returnItem))
+  return  {
+    statusCode: 201,
+    headers: {'Access-Control-Allow-Origin': '*'},
+    body: JSON.stringify(returnItem)
+  }
+  
+
+  /**
   const scanCommand = {
     TableName: todoTable
   }
@@ -72,7 +76,7 @@ export async function handler(event) {
       items
     })
   }
- 
+ ***/
   
   /*
   return {

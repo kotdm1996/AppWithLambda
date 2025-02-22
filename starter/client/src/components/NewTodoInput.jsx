@@ -24,7 +24,8 @@ export function NewTodoInput({ onNewTodo }) {
         dueDate
       })
       console.log('DKTEST====================================DKTEST')
-      console.log(createdTodo)
+      console.log(JSON.stringify(createdTodo))
+      console.log("DKTEST DONE = " + createdTodo.done)
       console.log('DKTEST====================================DKTEST')
       onNewTodo(createdTodo)
     } catch (e) {

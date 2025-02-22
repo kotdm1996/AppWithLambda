@@ -4,15 +4,19 @@ import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import AWSXRay from 'aws-xray-sdk-core'
 import { v4 as uuidv4 } from 'uuid'
+import middy from '@middy/core'
+import cors from '@middy/http-cors'
+import httpErrorHandler from '@middy/http-error-handler'
+import { getUserId } from '../utils.js'
 
 const dynamoDb = AWSXRay.captureAWSv3Client(new DynamoDB())
 const dynamoDbClient = DynamoDBDocument.from(dynamoDb)
-const s3Client = new S3Client()
+//const s3Client = new S3Client()
 
 const todoTable = process.env.TODO_TABLE
-const filesTable = process.env.FILES_TABLE
-const bucketName = process.env.FILES_S3_BUCKET
-const urlExpiration = parseInt(process.env.SIGNED_URL_EXPIRATION)
+//const filesTable = process.env.FILES_TABLE
+//const bucketName = process.env.FILES_S3_BUCKET
+//const urlExpiration = parseInt(process.env.SIGNED_URL_EXPIRATION)
 
 export async function handler(event) {
   console.log('Caller event', event)
@@ -77,13 +81,16 @@ export async function handler(event) {
 }
 
 async function todoExists(todoId) {
-  const result = await dynamoDbClient.get({
-    TableName: todoTable,
-    Key: {
-      id: todoId
-    }
-  })
 
+  const scanCommand = {
+    TableName: todoTable,
+    FilterExpression : "todoId = :todoId",
+    ExpressionAttributeValues: {':todoId':todoId}
+  }
+
+  const result = await dynamoDbClient.scan(scanCommand)
+  //const items = result.Items
+  
   console.log('Get todo: ', result)
-  return !!result.Item
+  return !!result.Items
 }

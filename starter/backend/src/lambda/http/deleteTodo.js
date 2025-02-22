@@ -32,7 +32,9 @@ export const handler = middy()
     //const deleteItemCommand = new DeleteItemCommand(deleteParams)
     const result = await dynamoDbClient.delete(deleteParams)
     const items = result.Items
-
+    console.log("DKTEST ====  DELETE TODO ============== DKTEST")
+    console.log(JSON.stringify({items}))
+    console.log("DKTEST ====  DELETE TODO ============== DKTEST")    
     return {
       statusCode: 200,
       body: JSON.stringify({
