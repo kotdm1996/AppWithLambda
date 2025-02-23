@@ -81,6 +81,14 @@ functions:
           request:
             schemas:
               application/json: ${file(models/create-task-request.json)}
+  
+  CreateFileRecord:
+    handler: src/lambda/s3/createFileRecord.handler
+    events:
+      - s3:
+          bucket: ${self:provider.environment.FILES_S3_BUCKET}
+          event: s3:ObjectCreated:*
+          existing: true
 
   # TODO: Configure this function - dktest - need test
   UpdateTodo:
@@ -91,9 +99,9 @@ functions:
           path: todos/{todoId}
           authorizer: Auth
           cors: true
-          request:
-            schemas:
-              application/json: ${file(models/create-task-request.json)}
+          #request:
+          #  schemas:
+          #    application/json: ${file(models/create-task-request.json)}
 
   # TODO: Configure this function  - need test
   DeleteTodo:
@@ -114,10 +122,7 @@ functions:
           authorizer: Auth
           path: todos/{todoId}/attachment
           cors: true
-          request:
-            schemas:
-              application/json: ${file(models/create-file-request.json)}
-
+         
 
 resources:
   Resources:

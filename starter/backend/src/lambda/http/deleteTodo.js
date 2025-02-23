@@ -1,11 +1,16 @@
-import { DeleteItemCommand, DynamoDB } from '@aws-sdk/client-dynamodb'
+import AWSXRay from 'aws-xray-sdk-core'
+import { DynamoDB } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
 import middy from '@middy/core'
 import cors from '@middy/http-cors'
 import httpErrorHandler from '@middy/http-error-handler'
-import { getUserId } from '../utils.js'
+import { createLogger } from '../../utils/logger.mjs'
 
-const dynamoDbClient = DynamoDBDocument.from(new DynamoDB())
+const logger = createLogger('deleteTodo')
+
+//const dynamoDbClient = DynamoDBDocument.from(new DynamoDB())
+const dynamoDb = AWSXRay.captureAWSv3Client(new DynamoDB())
+const dynamoDbClient = DynamoDBDocument.from(dynamoDb)
 
 const todoTable = process.env.TODO_TABLE
 
@@ -18,7 +23,7 @@ export const handler = middy()
   )
   .handler(async (event) => {
     console.log('Processing event: ', event)
-    
+    logger.info(event)
     const todoId = event.pathParameters.todoId
     //const bearerToken = event.headers.Authorization
     //const userId = getUserId(event)
@@ -42,38 +47,3 @@ export const handler = middy()
       })
     }
   })
-
-  /***
-   * 
-   *export async function handler(event) {
-  console.log('Processing event: ', event)
-  const todoId = event.pathParameters.todoId
-
-  const deleteTodoEvent = JSON.parse(event.body)
-
-  const authorization = event.headers.Authorization
-  const userId = getUserId(authorization)
-  
-  const deleteItem = {
-    id: todoId,
-    userId,    
-  }
-  //...newTodo
-
-  await dynamoDbClient.deleteItem({
-    TableName: todoTable,
-    Item: deleteItem
-  })
-
-  return {
-    statusCode: 201,
-    headers: {
-      'Access-Control-Allow-Origin': '*'
-    },
-    body: JSON.stringify({
-      deleteItem
-    })
-  }
-}
-   *  
-   */

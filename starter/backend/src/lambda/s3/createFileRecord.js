@@ -5,19 +5,36 @@ import { v4 as uuidv4 } from 'uuid'
 import { getUserId } from '../utils.js'
 import { createLogger } from '../../utils/logger.mjs'
 
-const logger = createLogger('createTodo')
+const logger = createLogger('createFileRecord')
 
 const dynamoDb = AWSXRay.captureAWSv3Client(new DynamoDB())
 const dynamoDbClient = DynamoDBDocument.from(dynamoDb)
 
 const todoTable = process.env.TODO_TABLE
 
+export async function processFile(inRecord) {
+
+  console.log("DKTEST ==================================== DKTEST")
+  console.log(JSON.stringify(inRecord.userIdentity))
+  console.log("DKTEST ==================================== DKTEST")
+  console.log(JSON.stringify(inRecord.requestParameters))
+  console.log("DKTEST ==================================== DKTEST")
+  console.log(JSON.stringify(inRecord.responseElements))
+  console.log("DKTEST ==================================== DKTEST")
+  console.log(JSON.stringify(inRecord.s3))
+  console.log("DKTEST ==================================== DKTEST")
+}
+
+
 export async function handler(event) {
-  console.log('Processing event: ', event)
-  const itemId = uuidv4()
-
-  const newTodo = JSON.parse(event.body)
-
+  console.log('Processing event createFileRecord(): ', event)
+  //const itemId = uuidv4()
+  for (const record of event.Records) {
+    await processFile(record)
+  }
+ 
+  
+  /*
   console.log('dktest-1')
   console.log('event.headers.Authorization = ' +  event.headers.Authorization)
   logger.info('dktest-1')
@@ -60,6 +77,6 @@ export async function handler(event) {
     headers: {'Access-Control-Allow-Origin': '*'},
     body: JSON.stringify(returnItem)
   }
-  
+*/  
 }
 

@@ -1,96 +1,73 @@
 import { DynamoDB } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import AWSXRay from 'aws-xray-sdk-core'
-import { v4 as uuidv4 } from 'uuid'
 import middy from '@middy/core'
 import cors from '@middy/http-cors'
 import httpErrorHandler from '@middy/http-error-handler'
-import { getUserId } from '../utils.js'
+import { todoExists } from '../utils.js'
 
 const dynamoDb = AWSXRay.captureAWSv3Client(new DynamoDB())
 const dynamoDbClient = DynamoDBDocument.from(dynamoDb)
-//const s3Client = new S3Client()
 
 const todoTable = process.env.TODO_TABLE
-//const filesTable = process.env.FILES_TABLE
-//const bucketName = process.env.FILES_S3_BUCKET
-//const urlExpiration = parseInt(process.env.SIGNED_URL_EXPIRATION)
 
-export async function handler(event) {
-  console.log('Caller event', event)
+export const handler = middy()
+  .use(httpErrorHandler())
+  .use(
+    cors({
+      credentials: true
+    })
+  )
+  .handler(async (event) => {
+    
+    console.log('Processing event: ', event)
+    
+    const todoId = event.pathParameters.todoId
+    const validTodoId = await todoExists(todoId)
+    if (!validTodoId) {
+      return {
+        statusCode: 404,
+        headers: {
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({
+          error: 'Group does not exist'
+        })
+      }
+    }
+    const updateJson = JSON.parse(event.body);
+    console.log('DKTEST=========================================DKTEST')
+    console.log('DKTEST===== BEFORE CREATING UPDATE ENTRY  =====DKTEST')
+    console.log('DKTEST=========================================DKTEST')
+    console.log(JSON.stringify(event.body))
+    console.log('DKTEST=========================================DKTEST')
+    console.log('DKTEST todoId ===> ' + todoId)
+    console.log('DKTEST doneStatus ===> ' + updateJson.done.toString())
+    console.log('DKTEST tableName ===> ' + todoTable)
+   
+    const paramsForUpdate = {
+      TableName: todoTable,
+      Key:{"todoId": todoId},
+      UpdateExpression: "set done = :doneStatus",            
+      ExpressionAttributeValues: {':doneStatus':updateJson.done},
+      ReturnValues:"UPDATED_NEW"
+    }
+    
+    console.log('DKTEST=========================================DKTEST')
+    
 
-  const todoId = event.pathParameters.todoId
+    const resultUpdate = await dynamoDbClient.update(paramsForUpdate)
 
-  const validTodoId = await todoExists(todoId)
+    console.log('DKTEST=========================================DKTEST')
+    console.log('DKTEST=====  AFTER CREATING UPDATE ENTRY  =====DKTEST')
+    console.log('DKTEST=========================================DKTEST')
 
-  if (!validTodoId) {
     return {
-      statusCode: 404,
+      statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify({
-        error: 'Group does not exist'
-      })
+      body: ''
     }
-  }
-  //here need to update valideToDoId , send update to dynamo db and return status
-  //could be this
-  /**
-   * https://stackoverflow.com/questions/76847397/best-way-to-update-data-in-dynamodb-via-a-lambda
-   * need to check
-   *  Key: {
-      id: `${req.user.sub}`,
-    },
-    UpdateExpression: `set age = ${req.body.age}, country = ${req.body.country}, skills = ${req.body.skills}`,
-    ReturnValues: "ALL_NEW",
-   * 
-   */
-  await dynamoDbClient.UpdateItem({
-    TableName: todoTable,
-    Item: newItem
+
   })
-
-  return {
-    statusCode: 201,
-    headers: {
-      'Access-Control-Allow-Origin': '*'
-    },
-    body: JSON.stringify({
-      newItem
-    })
-  }
-
-  /***
-  const fileID = uuidv4()
-  const newItem = await createFile(todoId, fileID, event)
-  
-  return {
-    statusCode: 201,
-    headers: {
-      'Access-Control-Allow-Origin': '*'
-    },
-    body: JSON.stringify({
-      newItem: newItem,
-      uploadUrl: url
-    })
-  }
-    *******/
-}
-
-async function todoExists(todoId) {
-
-  const scanCommand = {
-    TableName: todoTable,
-    FilterExpression : "todoId = :todoId",
-    ExpressionAttributeValues: {':todoId':todoId}
-  }
-
-  const result = await dynamoDbClient.scan(scanCommand)
-  //const items = result.Items
-  
-  console.log('Get todo: ', result)
-  return !!result.Items
-}
