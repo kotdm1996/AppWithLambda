@@ -4,7 +4,7 @@ import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
 import middy from '@middy/core'
 import cors from '@middy/http-cors'
 import httpErrorHandler from '@middy/http-error-handler'
-import { getUserId } from '../utils.js'
+import { getUserId, getAllEntriesByUidId } from '../utils.js'
 
 const dynamoDb = AWSXRay.captureAWSv3Client(new DynamoDB())
 const dynamoDbClient = DynamoDBDocument.from(dynamoDb)
@@ -24,6 +24,7 @@ export const handler = middy()
     
     const userId = getUserId(event)
 
+    
     const scanCommand = {
       TableName: todoTable,
       FilterExpression : "userId = :userId",
@@ -32,7 +33,8 @@ export const handler = middy()
 
     const result = await dynamoDbClient.scan(scanCommand)
     const items = result.Items
-
+    console.info("DKTEST CHECKING EMPTY OUTPUT ===> " + JSON.stringify(items))
+    //const items = await getAllEntriesByUidId(userId)
     return {
       statusCode: 200,
       body: JSON.stringify({

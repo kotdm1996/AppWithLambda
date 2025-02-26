@@ -31,6 +31,7 @@ export async function handler(event) {
     userId: userId,
     createdAt: createdAt,
     done: false,
+    attachmentUrl:'',
     ...newTodo
   }
 
