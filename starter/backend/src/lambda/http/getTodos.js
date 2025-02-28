@@ -1,15 +1,15 @@
-import AWSXRay from 'aws-xray-sdk-core'
-import { DynamoDB } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
+//import AWSXRay from 'aws-xray-sdk-core'
+//import { DynamoDB } from '@aws-sdk/client-dynamodb'
+//import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
 import middy from '@middy/core'
 import cors from '@middy/http-cors'
 import httpErrorHandler from '@middy/http-error-handler'
-import { getUserId, getAllEntriesByUidId } from '../utils.js'
+import { getUserId, getAllEntriesByUidId, getAllEntriesByUidIdNewTry } from '../utils.js'
 
-const dynamoDb = AWSXRay.captureAWSv3Client(new DynamoDB())
-const dynamoDbClient = DynamoDBDocument.from(dynamoDb)
+//const dynamoDb = AWSXRay.captureAWSv3Client(new DynamoDB())
+//const dynamoDbClient = DynamoDBDocument.from(dynamoDb)
 
-const todoTable = process.env.TODO_TABLE
+//const todoTable = process.env.TODO_TABLE
 
 //need to check how to filter todos only for specific user
 export const handler = middy()
@@ -23,8 +23,10 @@ export const handler = middy()
     console.log('Processing event: ', event)
     
     const userId = getUserId(event)
-
     
+    return await getAllEntriesByUidIdNewTry(userId)
+    
+    /*
     const scanCommand = {
       TableName: todoTable,
       FilterExpression : "userId = :userId",
@@ -41,4 +43,5 @@ export const handler = middy()
         items
       })
     }
+    */
   })

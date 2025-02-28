@@ -49,6 +49,137 @@ export async function getEntryByTodoId(todoId) {
   return result.Items[0]
 }
 
+export async function getAllEntriesByUidIdNewTry(userId) {
+
+  console.log("getAllEntriesByUidIdNewTry() ==> " + userId)
+ 
+  const params = {
+    TableName: todoTable,
+    KeyConditionExpression: 'userId = :userId',
+    ExpressionAttributeValues: {':userId': userId}
+  }
+  
+  console.log(JSON.stringify(params))
+
+try {
+  const result = await dynamoDbClient.query(params)
+  
+  const items = result.Items
+
+  console.log(JSON.stringify(items))
+  return {
+      statusCode: 200,
+      body: JSON.stringify({items}) // Return the queried items
+  }
+} catch (error) {
+  console.error("Unable to query. Error:", error);
+  return {
+      statusCode: 500,
+      body: '[]'
+  }
+}
+//JSON.stringify({ error: "Could not query items." }),
+}
+
+export async function getAllFilesEntriesByTodoIdNewTry(todoId) {
+
+  console.log("getAllEntriesByTodoIdIdNewTry() ==> " + todoId)
+ 
+  const params = {
+    TableName: filesTable,
+    IndexName: 'TodoIndex',
+    KeyConditionExpression: 'todoId = :todoId',
+    ExpressionAttributeValues: {':todoId': todoId}
+}
+console.log(params)
+console.log("=========================================================")
+
+  //const result = await dynamoDbClient.query(params)
+  //const items = result.Items
+  //console.log(JSON.stringify({items}))
+  /*
+  const returnStatusCode = 500
+  const returnBody = '[]'
+
+  await dynamoDbClient.query(params).then(result => { 
+    const items = result.Items
+    console.log("INSDIE getAllEntriesByTodoIdIdNewTry() - got something back")
+    console.log(JSON.stringify({items}))
+    returnBody = JSON.stringify({items})
+    returnStatusCode = 200    
+  })
+  .catch(error => {
+    console.error("Unable to query. Error:", error);    
+  })
+  */
+ try {
+    const dbResult = await dynamoDbClient.query(params)
+    const items = dbResult.Items
+    console.log(JSON.stringify({items}))
+    return {
+      statusCode: 200,
+      body: JSON.stringify({items})
+    }
+ } catch (error){
+  console.error("Error retrieving items:", error);
+  return {
+    statusCode: 500,
+    body: '[]'
+  }
+ }
+  return {
+    statusCode: returnStatusCode,
+    body: returnBody
+  }
+}
+
+export async function getTodoDataForToDoId12345(inTodoId) {
+  const tableName = filesTable;
+  const keyConditions = {todoId: inTodoId }
+
+  //todoId: "someTodoId"   // Example sort key (if applicable)
+
+  return await genericDbQuery(tableName, keyConditions)
+}
+
+export async function getTodoDataForUser12345(inUserId) {
+  const tableName = todoTable;
+  const keyConditions = {userId: inUserId }
+
+  //todoId: "someTodoId"   // Example sort key (if applicable)
+
+  return await genericDbQuery(tableName, keyConditions)
+}
+
+export async function genericDbQuery(tableName, keyConditions) {
+      // Start building the query parameters
+      const params = {
+        TableName: tableName,
+        KeyConditionExpression: '',
+        ExpressionAttributeValues: {}
+    };
+
+    // Dynamically build the KeyConditionExpression and ExpressionAttributeValues
+    const expressions = [];
+    for (const [key, value] of Object.entries(keyConditions)) {
+        const expressionKey = `:${key}`; // Create a placeholder for the value
+        expressions.push(`${key} = ${expressionKey}`); // Build the condition
+        params.ExpressionAttributeValues[expressionKey] = value; // Set the value in the map
+    }
+
+    // Join the expressions with " AND " if there are multiple conditions
+    params.KeyConditionExpression = expressions.join(' AND ');
+
+    try {
+        const result = await dynamoDB.query(params).promise();
+        console.log("Query succeeded:", result.Items);
+        return result.Items;
+    } catch (error) {
+        console.error("Unable to query. Error:", error);
+        throw error;
+    }
+}
+
 export async function getAllEntriesByUidId(userId) {
 
   console.log("getAllEntriesByUidId() ==> " + userId)
@@ -73,16 +204,36 @@ export async function getAllEntriesByUidId(userId) {
   
 }
 
-export async function deleteTodoByTodoId(todoId) {
+export async function deleteTodoByTodoId(todoId, userId) {
 
   const deleteParams = {
     TableName: todoTable,
     Key: {
-      todoId: todoId
+      todoId: todoId,
+      userId: userId
     }
   }
 
+  console.log(JSON.stringify(deleteParams))
   const result = await dynamoDbClient.delete(deleteParams)
+  console.log(JSON.stringify(result))
+  const items = result.Items
+  return items
+}
+
+export async function deleteFileIdByTodoIds(todoId, fileId) {
+
+  const deleteParams = {
+    TableName: filesTable,
+    Key: {
+      todoId: todoId,
+      fileId: fileId
+    }
+  }
+
+  console.log(JSON.stringify(deleteParams))
+  const result = await dynamoDbClient.delete(deleteParams)
+  console.log(JSON.stringify(result))
   const items = result.Items
   return items
 }

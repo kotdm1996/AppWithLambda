@@ -59,6 +59,8 @@ export const handler = middy()
       Item: newItem,
     })
 
+    console.log('File Upload URL ==> ' + fileUploadUrl)
+    
     return {
       statusCode: 201,
       headers: {

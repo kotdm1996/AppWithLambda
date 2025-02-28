@@ -1,9 +1,9 @@
 service: serverless-todo-app
 
+frameworkVersion: '4.6.1'
+
 plugins:
   - serverless-iam-roles-per-function
-
-frameworkVersion: '4.6.1'
 
 provider:
   name: aws
@@ -51,8 +51,8 @@ provider:
           Resource: arn:aws:s3:::${self:provider.environment.FILES_S3_BUCKET}/*
         - Effect: Allow
           Action:
-            - "xray:PutTraceSegments"
-            - "xray:PutTelemetryRecords"
+            - xray:PutTraceSegments
+            - xray:PutTelemetryRecords
           Resource:
             - "*"
 
@@ -69,6 +69,19 @@ functions:
           path: todos
           authorizer: Auth          
           cors: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:          
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+        Resource:
+          - "*"
 
   # TODO: Configure this function - dktest - not tested
   CreateTodo:
@@ -78,11 +91,22 @@ functions:
           method: post
           authorizer: Auth
           path: todos
-          cors: true
+          cors: true    
           request:
             schemas:
               application/json: ${file(models/create-task-request.json)}
-  
+    iamRoleStatements:
+      - Effect: Allow
+        Action:          
+          - dynamodb:PutItem          
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+        Resource:
+          - "*"
+
   CreateFileRecord:
     handler: src/lambda/s3/createFileRecord.handler
     events:
@@ -90,7 +114,7 @@ functions:
           bucket: ${self:provider.environment.FILES_S3_BUCKET}
           event: s3:ObjectCreated:*
           existing: true
-
+  
   # TODO: Configure this function - dktest - need test
   UpdateTodo:
     handler: src/lambda/http/updateTodo.handler
@@ -100,6 +124,21 @@ functions:
           path: todos/{todoId}
           authorizer: Auth
           cors: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:          
+          - dynamodb:Scan
+          - dynamodb:PutItem         
+          - dynamodb:UpdateItem          
+          - dynamodb:Query
+        Resource:           
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+        Resource:
+          - "*"
           #request:
           #  schemas:
           #    application/json: ${file(models/create-task-request.json)}
@@ -113,6 +152,21 @@ functions:
           path: todos/{todoId}
           authorizer: Auth
           cors: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:                    
+          - dynamodb:DeleteItem
+          - dynamodb:Query        
+        Resource:           
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FILES_TABLE}
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FILES_TABLE}/index/TodoIndex
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+        Resource:
+          - "*"
 
   # TODO: Configure this function
   GenerateUploadUrl:
@@ -122,8 +176,25 @@ functions:
           method: post
           authorizer: Auth
           path: todos/{todoId}/attachment
-          cors: true
-         
+          cors: true    
+    iamRoleStatements:
+      - Effect: Allow  
+        Action:                              
+          - dynamodb:Scan
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+          - s3:PutObject
+        Resource:           
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FILES_TABLE}
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+          - arn:aws:s3:::${self:provider.environment.FILES_S3_BUCKET}/*
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+        Resource:
+          - "*"
 
 resources:
   Resources:
@@ -143,12 +214,23 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
           - AttributeName: todoId
-            AttributeType: S          
+            AttributeType: S
         KeySchema:
+          - AttributeName: userId
+            KeyType: HASH #Partition Key from UDACITY AI
           - AttributeName: todoId
-            KeyType: HASH                                   
+            KeyType: RANGE #Partition Key from UDACITY AI                                            
         BillingMode: PAY_PER_REQUEST
+        GlobalSecondaryIndexes:
+          - IndexName: TodoTableIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL        
         TableName: ${self:provider.environment.TODO_TABLE}
     
     FilesDynamoDBTable:
@@ -156,11 +238,22 @@ resources:
       Properties:
         AttributeDefinitions:
           - AttributeName: fileId
-            AttributeType: S    
+            AttributeType: S
+          - AttributeName: todoId
+            AttributeType: S  
         KeySchema:
           - AttributeName: fileId
-            KeyType: HASH          
+            KeyType: HASH
+          - AttributeName: todoId
+            KeyType: RANGE              
         BillingMode: PAY_PER_REQUEST
+        GlobalSecondaryIndexes:
+          - IndexName: TodoIndex
+            KeySchema:
+              - AttributeName: todoId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
         TableName: ${self:provider.environment.FILES_TABLE}
 
     AttachmentsBucket:

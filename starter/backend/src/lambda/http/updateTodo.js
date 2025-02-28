@@ -4,7 +4,7 @@ import AWSXRay from 'aws-xray-sdk-core'
 import middy from '@middy/core'
 import cors from '@middy/http-cors'
 import httpErrorHandler from '@middy/http-error-handler'
-import { todoExists } from '../utils.js'
+import { todoExists, getUserId } from '../utils.js'
 
 const dynamoDb = AWSXRay.captureAWSv3Client(new DynamoDB())
 const dynamoDbClient = DynamoDBDocument.from(dynamoDb)
@@ -44,10 +44,11 @@ export const handler = middy()
     console.log('DKTEST todoId ===> ' + todoId)
     console.log('DKTEST doneStatus ===> ' + updateJson.done.toString())
     console.log('DKTEST tableName ===> ' + todoTable)
-   
+
+    const userId = getUserId(event)
     const paramsForUpdate = {
       TableName: todoTable,
-      Key:{"todoId": todoId},
+      Key:{"todoId": todoId,"userId": userId},
       UpdateExpression: "set done = :doneStatus",            
       ExpressionAttributeValues: {':doneStatus':updateJson.done},
       ReturnValues:"UPDATED_NEW"
