@@ -1,6 +1,7 @@
-import Axios from 'axios'
+
 import jsonwebtoken from 'jsonwebtoken'
-//import { createLogger } from '../../utils/logger.mjs'
+//////import { createLogger } from '../../utils/logger.mjs'
+//import {processAuthorizerEvent} from './utils.mjs'
 
 const certificate=`-----BEGIN CERTIFICATE-----
 MIIDHTCCAgWgAwIBAgIJI1mm507EhQwCMA0GCSqGSIb3DQEBCwUAMCwxKjAoBgNV
@@ -22,11 +23,13 @@ MyC28VqPlyV54/D4qVke1MTlrK/vLH4UPNtXQoykFjfooSkl8ptGNmsbNBEMz6SA
 evhnN+1z7UUbV6zU9dsHW9DrDEdfB8BE889KeCgWwGzN
 -----END CERTIFICATE-----`
 
+
 //const logger = createLogger('auth')
 
 const jwksUrl = 'https://test-endpoint.auth0.com/.well-known/jwks.json'
 
 export async function handler(event) {
+
   try {
     const jwtToken = await verifyToken(event.authorizationToken)
 
@@ -59,8 +62,9 @@ export async function handler(event) {
         ]
       }
     }
-  }
+  }  
 }
+
 
 async function verifyToken(authHeader) {
   const token = getToken(authHeader)

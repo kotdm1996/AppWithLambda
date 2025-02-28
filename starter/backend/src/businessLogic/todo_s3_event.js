@@ -1,8 +1,6 @@
-import {processFileSavedCallback} from '../../businessLogic/todo_s3_event.js'
-/*
-import { getEntryByTodoId, deleteFileEntryByFileId, getFileInfo, updateAttachmentUrl } from '../utils.js'
-
-export async function processFile(inRecord) {
+import { getEntryByTodoId, getFileInfo, updateAttachmentUrl } from '../dataLayer/dynamoUtils.js'
+//deleteFileEntryByFileId
+export async function processFileSavedCallback(inRecord) {
 
   console.log("DKTEST ==================================== DKTEST")
   console.log(JSON.stringify(inRecord.userIdentity))
@@ -27,17 +25,4 @@ export async function processFile(inRecord) {
 
   updateAttachmentUrl(entry_to_update,newly_created_file_info.fileUrl )
 
-  const tmpDeleteResult = await deleteFileEntryByFileId(inRecord.s3.object.key)
-
-  console.log("AFTER DELETING ENTRY")
-  console.log(tmpDeleteResult)
-}
-*/handler
-export async function handler(event) {
-  console.log('Processing event createFileRecord(): ', event)
-  
-  for (const record of event.Records) {
-    //await processFile(record)
-    await processFileSavedCallback(record)
-  } 
 }
