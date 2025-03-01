@@ -22,39 +22,6 @@ provider:
       FILES_S3_BUCKET: dktest202402-todo-files-${self:provider.stage}
       SIGNED_URL_EXPIRATION: 300
 
-  iam:
-    role:
-      statements:
-        - Effect: Allow
-          Action:           
-            - dynamodb:PutItem
-            - dynamodb:GetItem
-            - dynamodb:Query
-            - dynamodb:DeleteItem
-            - dynamodb:UpdateItem
-          Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
-        - Effect: Allow        
-          Action:
-              - dynamodb:Query
-              - dynamodb:PutItem
-              - dynamodb:DeleteItem
-          Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FILES_TABLE}
-        - Effect: Allow
-          Action:
-              - dynamodb:Query
-          Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FILES_TABLE}/index/${self:provider.environment.FILES_ID_INDEX}
-        - Effect: Allow
-          Action:
-            - s3:PutObject
-            - s3:GetObject
-          Resource: arn:aws:s3:::${self:provider.environment.FILES_S3_BUCKET}/*
-        - Effect: Allow
-          Action:
-            - xray:PutTraceSegments
-            - xray:PutTelemetryRecords
-          Resource:
-            - "*"
-
 functions:
   Auth:
     handler: src/lambda/auth/auth0Authorizer.handler
@@ -112,6 +79,21 @@ functions:
           bucket: ${self:provider.environment.FILES_S3_BUCKET}
           event: s3:ObjectCreated:*
           existing: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:          
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+        Resource: 
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FILES_TABLE}
+      - Effect: Allow
+        Action:
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+        Resource:
+          - "*"
   
   # TODO: Configure this function - dktest - need test
   UpdateTodo:
