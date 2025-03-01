@@ -5,10 +5,10 @@ export async function update_todo_event(event)
 {
     
     console.log('Processing event: ', event)
-    
+    const userId = getUserId(event)
     const todoId = event.pathParameters.todoId
 
-    const validTodoId = await todoExists(todoId)
+    const validTodoId = await todoExists(todoId, userId)
 
     if (!validTodoId) {
       return {
@@ -30,8 +30,6 @@ export async function update_todo_event(event)
     console.log('DKTEST todoId ===> ' + todoId)
     console.log('DKTEST doneStatus ===> ' + updateJson.done.toString())
     
-    const userId = getUserId(event)
-
     await updateTodoTableEntryStatus(todoId, userId, updateJson.done)
     
     console.log('DKTEST=========================================DKTEST')

@@ -38,35 +38,39 @@ export async function insertIntoFileDb(inNewFileItem)
   }
 }
 
-export async function todoExists(todoId) {
+ 
+export async function todoExists(todoId, userId) {
 
-  const scanCommand = {
+  const params = {
     TableName: todoTable,
-    FilterExpression : "todoId = :todoId",
-    ExpressionAttributeValues: {':todoId':todoId}
+    KeyConditionExpression : 'todoId = :todoId AND userId = :userId',
+    ExpressionAttributeValues: {':todoId':todoId,':userId':userId}
   }
 
-  const result = await dynamoDbClient.scan(scanCommand)
+  const result = await dynamoDbClient.query(params)
   //const items = result.Items
   
   console.log('Get todo: ', result)
   return !!result.Items
 }
 
-export async function getEntryByTodoId(todoId) {
 
-  const scanCommand = {
-    TableName: todoTable,
-    FilterExpression : "todoId = :todoId",
-    ExpressionAttributeValues: {':todoId':todoId}
+
+export async function getEntryByTodoId(todoId, userId) {
+
+  const params = {
+    TableName: todoTable,    
+    KeyConditionExpression : 'todoId = :todoId AND userId = :userId',
+    ExpressionAttributeValues: {':todoId':todoId,':userId':userId}
   }
 
-  const result = await dynamoDbClient.scan(scanCommand)
+  const result = await dynamoDbClient.query(params)
   //const items = result.Items
   
   console.log('Get todo: ', result)
   return result.Items[0]
 }
+
 
 export async function getAllEntriesByUidIdNewTry(userId) {
 

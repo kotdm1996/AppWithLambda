@@ -1,11 +1,13 @@
 import { v4 as uuidv4 } from 'uuid'
 import { getUploadUrl, generateFileUrl } from '../dataLayer/s3Utils.js'
 import { todoExists, getEntryByTodoId,insertIntoFileDb } from '../dataLayer/dynamoUtils.js'
+import { getUserId } from '../lambda/utils.js'
 
 export async function generateUploadUrlTodo(event) {
     console.log('Processing event: ', event)
+    const userId = getUserId(event) 
     const todoId = event.pathParameters.todoId
-    const validTodoId = await todoExists(todoId)
+    const validTodoId = await todoExists(todoId, userId)
 
     if (!validTodoId) {
       return {
@@ -18,7 +20,7 @@ export async function generateUploadUrlTodo(event) {
     }
     const newFile = JSON.parse(event.body)
     const fileId = uuidv4()
-    const todoItem = await getEntryByTodoId(todoId)
+    const todoItem = await getEntryByTodoId(todoId, userId)
     todoItem.fileUrl = await generateFileUrl(fileId)
     const fileUploadUrl = await getUploadUrl(fileId)
     const timestamp = new Date().toISOString()
@@ -27,6 +29,7 @@ export async function generateUploadUrlTodo(event) {
       todoId,
       timestamp,
       fileId,
+      userId,
       fileUrl: todoItem.fileUrl,
       ...newFile
     }

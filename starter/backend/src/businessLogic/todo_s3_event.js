@@ -19,7 +19,7 @@ export async function processFileSavedCallback(inRecord) {
   
   console.log(newly_created_file_info)
 
-  const entry_to_update = await getEntryByTodoId(newly_created_file_info.todoId)
+  const entry_to_update = await getEntryByTodoId(newly_created_file_info.todoId, newly_created_file_info.userId)
 
   console.log(entry_to_update)
 

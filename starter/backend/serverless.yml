@@ -26,8 +26,7 @@ provider:
     role:
       statements:
         - Effect: Allow
-          Action:
-            - dynamodb:Scan
+          Action:           
             - dynamodb:PutItem
             - dynamodb:GetItem
             - dynamodb:Query
@@ -71,8 +70,7 @@ functions:
           cors: true
     iamRoleStatements:
       - Effect: Allow
-        Action:          
-          - dynamodb:Scan
+        Action:                    
           - dynamodb:GetItem
           - dynamodb:Query
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
@@ -126,8 +124,7 @@ functions:
           cors: true
     iamRoleStatements:
       - Effect: Allow
-        Action:          
-          - dynamodb:Scan
+        Action:                    
           - dynamodb:PutItem         
           - dynamodb:UpdateItem          
           - dynamodb:Query
@@ -181,8 +178,7 @@ functions:
           cors: true    
     iamRoleStatements:
       - Effect: Allow  
-        Action:                              
-          - dynamodb:Scan
+        Action:                                        
           - dynamodb:PutItem
           - dynamodb:UpdateItem
           - dynamodb:Query
