@@ -109,7 +109,7 @@ functions:
 
   CreateFileRecord:
     handler: src/lambda/s3/createFileRecord.handler
-    events:
+    events:      
       - s3:
           bucket: ${self:provider.environment.FILES_S3_BUCKET}
           event: s3:ObjectCreated:*

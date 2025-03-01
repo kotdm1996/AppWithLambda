@@ -9,6 +9,21 @@ const dynamoDbClient = DynamoDBDocument.from(dynamoDb)
 const todoTable = process.env.TODO_TABLE
 const filesTable = process.env.FILES_TABLE
 
+export async function createNewTodoInDB(inTodoNewObject)
+{
+  try
+  {
+    const insertStatus = await dynamoDbClient.put({
+      TableName: todoTable,
+      Item: inTodoNewObject
+    })
+    console.log(insertStatus)
+  }
+  catch(error) {
+    console.log(error)
+  }
+}
+
 export async function todoExists(todoId) {
 
   const scanCommand = {
