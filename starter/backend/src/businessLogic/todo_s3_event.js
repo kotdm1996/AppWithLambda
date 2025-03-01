@@ -24,5 +24,4 @@ export async function processFileSavedCallback(inRecord) {
   console.log(entry_to_update)
 
   updateAttachmentUrl(entry_to_update,newly_created_file_info.fileUrl )
-
 }

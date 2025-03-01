@@ -1,7 +1,6 @@
 import { PutObjectCommand, DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-//const AWS = require('aws-sdk');
-//const s3 = new AWS.S3();
+
 const s3Client = new S3Client()
 const bucketName = process.env.FILES_S3_BUCKET
 const urlExpiration = parseInt(process.env.SIGNED_URL_EXPIRATION)

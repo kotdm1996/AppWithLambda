@@ -1,4 +1,3 @@
-import { parseUserId } from '../auth/utils.js'
 import { DynamoDB , QueryCommand} from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
 import AWSXRay from 'aws-xray-sdk-core'
