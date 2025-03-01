@@ -23,7 +23,7 @@ export async function handler(event) {
   logger.info('dktest-1')
   logger.info('event.headers.Authorization = ' +  event.headers.Authorization)
 
-  //const authorization = event.headers.Authorization
+  
   const userId = getUserId(event)
   const createdAt = new Date(new Date().toString().split('GMT')[0]+' UTC').toISOString()
   const newItem = {

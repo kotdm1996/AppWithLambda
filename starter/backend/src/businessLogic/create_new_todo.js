@@ -41,6 +41,8 @@ export async function create_new_todo(event) {
     done: false,
     createdAt: createdAt,    
   }}
+    
+  
 
   console.debug('Printing returning item ===> ' + JSON.stringify(returnItem))
   return  {

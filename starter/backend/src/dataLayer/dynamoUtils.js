@@ -24,6 +24,21 @@ export async function createNewTodoInDB(inTodoNewObject)
   }
 }
 
+export async function insertIntoFileDb(inNewFileItem)
+{
+  try
+  {
+    const insertStatus = await dynamoDbClient.put({
+      TableName: filesTable,
+      Item: inNewFileItem
+    })
+    console.log(insertStatus)
+  }
+  catch(error) {
+    console.log(error)
+  }
+}
+
 export async function todoExists(todoId) {
 
   const scanCommand = {
@@ -83,7 +98,6 @@ try {
       body: '[]'
   }
 }
-//JSON.stringify({ error: "Could not query items." }),
 }
 
 export async function getAllFilesEntriesByTodoIdNewTry(todoId) {
@@ -284,4 +298,19 @@ export async function updateAttachmentUrl(inDBEntry,inAttachmentUrl){
     TableName: todoTable,
     Item: inDBEntry
   })
+}
+
+export async function updateTodoTableEntryStatus(inTodoId, inUid, inStatus)
+{
+
+  const paramsForUpdate = {
+    TableName: todoTable,
+    Key:{"todoId": inTodoId,"userId": inUid},
+    UpdateExpression: "set done = :doneStatus",            
+    ExpressionAttributeValues: {':doneStatus':inStatus},
+    ReturnValues:"UPDATED_NEW"
+  }
+
+  const resultUpdate = await dynamoDbClient.update(paramsForUpdate)
+  console.log(resultUpdate)
 }
